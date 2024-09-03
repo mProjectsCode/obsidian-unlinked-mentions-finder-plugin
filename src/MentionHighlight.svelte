@@ -1,10 +1,12 @@
 <script lang="ts">
 	import type { Mention } from './MentionFinder';
 
-	const { mention }: { mention: Mention } = $props();
+	let { mention }: { mention: Mention } = $props();
 
-	const pre = mention.line.substring(0, mention.lineIndex);
-	const post = mention.line.substring(mention.lineIndex + mention.text.length);
+	let m = $state(mention);
+
+	let pre = $derived(mention.line.substring(0, mention.lineIndex));
+	let post = $derived(mention.line.substring(mention.lineIndex + mention.text.length));
 </script>
 
 {pre}<span class="ulmf-mention-highlight">{mention.text}</span>{post}

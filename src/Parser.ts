@@ -2,12 +2,14 @@ export class Parser {
 	lines: string[];
 	lineNumber: number;
 	lineIndex: number;
+	index: number;
 	atEnd: boolean;
 
-	constructor(str: string) {
+	constructor(str: string, indexOffset: number = 0) {
 		this.lines = str.split('\n');
 		this.lineNumber = 1;
 		this.lineIndex = 0;
+		this.index = indexOffset;
 		this.atEnd = false;
 	}
 
@@ -20,6 +22,8 @@ export class Parser {
 	}
 
 	advanceToNextLine(): void {
+		this.index += this.currentLine().length - this.lineIndex + 1;
+
 		this.lineNumber += 1;
 		this.lineIndex = 0;
 
@@ -29,6 +33,8 @@ export class Parser {
 	}
 
 	advance(): void {
+		this.index += 1;
+
 		if (this.lineIndex >= this.currentLine().length) {
 			this.lineNumber += 1;
 			this.lineIndex = 0;

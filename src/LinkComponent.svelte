@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { App, TFile } from 'obsidian';
 
-	const {
+	let {
 		file,
 		app,
 	}: {
@@ -9,8 +9,7 @@
 		app: App;
 	} = $props();
 
-	let href = file.path;
-	href.substring(0, href.length - file.extension.length);
+	let href = $derived(file.path.substring(0, file.path.length - file.extension.length));
 
 	function openFile() {
 		app.workspace.openLinkText(href, '', true);

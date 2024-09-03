@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { TFile } from 'obsidian';
 	import LinkComponent from './LinkComponent.svelte';
 	import type { Mention } from './MentionFinder';
 	import MentionHighlight from './MentionHighlight.svelte';
@@ -16,6 +17,12 @@
 		view.mentionFinder.findMentionsInVault().then(res => {
 			results = res;
 		});
+	}
+
+	async function linkResult(result: Mention, target: TFile) {
+		if (await view.mentionFinder.linkMention(result, target)) {
+			results = results.filter(r => r !== result);
+		}
 	}
 </script>
 
@@ -37,7 +44,8 @@
 					<td><LinkComponent file={result.file} app={view.plugin.app}></LinkComponent></td>
 					<td>
 						{#each result.mentions as mention}
-							<LinkComponent file={mention} app={view.plugin.app}></LinkComponent>
+							<!-- <LinkComponent file={mention} app={view.plugin.app}></LinkComponent> -->
+							<button onclick={() => void linkResult(result, mention)}>{mention.name}</button>
 						{/each}
 					</td>
 				</tr>

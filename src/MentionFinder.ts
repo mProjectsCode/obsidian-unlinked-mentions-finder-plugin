@@ -7,6 +7,7 @@ export interface Mention {
 	text: string;
 	file: TFile;
 	line: string;
+	index: number;
 	lineNumber: number;
 	lineIndex: number;
 	mentions: TFile[];
@@ -60,16 +61,16 @@ export class MentionFinder {
 			const frontmatterInfo = getFrontMatterInfo(text);
 			text = text.slice(frontmatterInfo.contentStart);
 
-			const mentions = this.findMentionsInText(text, file);
+			const mentions = this.findMentionsInText(text, frontmatterInfo.contentStart, file);
 			result.push(...mentions);
 		}
 
 		return result;
 	}
 
-	findMentionsInText(text: string, file: TFile): Mention[] {
+	findMentionsInText(text: string, startIndex: number, file: TFile): Mention[] {
 		const result: Mention[] = [];
-		const parser = new Parser(text);
+		const parser = new Parser(text, startIndex);
 		let inLink = false;
 
 		while (!parser.atEnd) {
@@ -107,8 +108,9 @@ export class MentionFinder {
 
 				if (files.length > 0) {
 					result.push({
-						text: mention,
+						text: parser.currentLine().substring(parser.lineIndex, parser.lineIndex + mention.length),
 						file: file,
+						index: parser.index,
 						line: parser.currentLine(),
 						lineNumber: parser.lineNumber,
 						lineIndex: parser.lineIndex,
@@ -146,5 +148,10 @@ export class MentionFinder {
 		}
 
 		return !word || !parser.isAlphanumeric(index + match.length);
+	}
+
+	async linkMention(mention: Mention, target: TFile): Promise<boolean> {
+		const linkText = this.plugin.generateLink(target, mention.file.path, mention.text);
+		return await this.plugin.safeReplaceAtIndex(mention.file, mention.index, mention.text, linkText);
 	}
 }

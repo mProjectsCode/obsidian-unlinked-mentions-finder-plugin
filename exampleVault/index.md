@@ -11,3 +11,5 @@ Banana asdkasd
 appleasda
 
 asdapple
+
+[[Apple|apple pie]]

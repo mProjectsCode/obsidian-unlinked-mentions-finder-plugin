@@ -1,6 +1,5 @@
-import type { WorkspaceLeaf } from 'obsidian';
-import { Plugin } from 'obsidian';
-import { MentionFinder } from 'src/MentionFinder';
+import type { TFile, WorkspaceLeaf } from 'obsidian';
+import { Notice, Plugin } from 'obsidian';
 import type { MyPluginSettings } from 'src/settings/Settings';
 import { DEFAULT_SETTINGS } from 'src/settings/Settings';
 import { SampleSettingTab } from 'src/settings/SettingTab';
@@ -17,36 +16,6 @@ export default class UnlinkedMentionsFinderPlugin extends Plugin {
 		this.addSettingTab(new SampleSettingTab(this.app, this));
 
 		this.registerView(UNLINKED_MENTIONS_FINDER_VIEW_TYPE, (leaf: WorkspaceLeaf) => new UnlinkedMentionsFinderView(leaf, this));
-
-		this.addCommand({
-			id: 'test',
-			name: 'Test',
-			callback: async () => {
-				const mentionFinder = new MentionFinder(this);
-				mentionFinder.init();
-
-				const activeFile = this.app.workspace.getActiveFile();
-				if (!activeFile) {
-					return;
-				}
-
-				const text = await this.app.vault.cachedRead(activeFile);
-				const mentions = mentionFinder.findMentionsInText(text, activeFile);
-				console.log(mentions);
-			},
-		});
-
-		this.addCommand({
-			id: 'test2',
-			name: 'Test2',
-			callback: async () => {
-				const mentionFinder = new MentionFinder(this);
-				mentionFinder.init();
-
-				const mentions = await mentionFinder.findMentionsInVault();
-				console.log(mentions);
-			},
-		});
 
 		this.addCommand({
 			id: 'open-unlinked-mentions-finder',
@@ -85,5 +54,29 @@ export default class UnlinkedMentionsFinderPlugin extends Plugin {
 
 		// "Reveal" the leaf in case it is in a collapsed sidebar
 		workspace.revealLeaf(leaf);
+	}
+
+	async safeReplaceAtIndex(file: TFile, index: number, str: string, replacement: string): Promise<boolean> {
+		try {
+			const text = await this.app.vault.read(file);
+			const pre = text.slice(0, index);
+			const post = text.slice(index + str.length);
+			const oldText = text.slice(index, index + str.length);
+			if (oldText !== str) {
+				new Notice('Failed to replace text. The text has changed since it was found.');
+				return false;
+			}
+			await this.app.vault.modify(file, pre + replacement + post);
+		} catch (e) {
+			new Notice('Failed to replace text. See the console for more info.');
+			console.warn(e);
+			return false;
+		}
+
+		return true;
+	}
+
+	generateLink(file: TFile, sourcePath: string, text: string): string {
+		return this.app.fileManager.generateMarkdownLink(file, sourcePath, '', text);
 	}
 }
