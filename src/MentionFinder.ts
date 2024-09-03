@@ -78,13 +78,13 @@ export class MentionFinder {
 				continue;
 			}
 
-			if (this.matchStringAtIndex(parser.currentLine(), parser.lineIndex, '[[')) {
+			if (this.matchStringAtIndex(parser, false, parser.currentLine(), parser.lineIndex, '[[')) {
 				inLink = true;
 				parser.advanceN(2);
 				continue;
 			}
 
-			if (this.matchStringAtIndex(parser.currentLine(), parser.lineIndex, ']]')) {
+			if (this.matchStringAtIndex(parser, false, parser.currentLine(), parser.lineIndex, ']]')) {
 				inLink = false;
 				parser.advanceN(2);
 				continue;
@@ -95,16 +95,26 @@ export class MentionFinder {
 				continue;
 			}
 
-			const mention = this.findMention(parser.currentLine(), parser.lineIndex);
+			if (!(parser.isAlphanumeric(parser.lineIndex) && !parser.isAlphanumeric(parser.lineIndex - 1))) {
+				parser.advance();
+				continue;
+			}
+
+			const mention = this.findMention(parser, parser.currentLine(), parser.lineIndex);
 			if (mention) {
-				result.push({
-					text: mention,
-					file: file,
-					line: parser.currentLine(),
-					lineNumber: parser.lineNumber,
-					lineIndex: parser.lineIndex,
-					mentions: this.fileNameMap.get(mention.toLowerCase()) ?? [],
-				});
+				let files = this.fileNameMap.get(mention.toLowerCase()) ?? [];
+				files = files.filter(f => f.path !== file.path);
+
+				if (files.length > 0) {
+					result.push({
+						text: mention,
+						file: file,
+						line: parser.currentLine(),
+						lineNumber: parser.lineNumber,
+						lineIndex: parser.lineIndex,
+						mentions: files,
+					});
+				}
 
 				parser.advanceN(mention.length);
 			} else {
@@ -114,9 +124,9 @@ export class MentionFinder {
 		return result;
 	}
 
-	private findMention(text: string, index: number): string | undefined {
+	private findMention(parser: Parser, text: string, index: number): string | undefined {
 		for (const fileName of this.fileNames) {
-			if (this.matchStringAtIndex(text, index, fileName)) {
+			if (this.matchStringAtIndex(parser, true, text, index, fileName)) {
 				return fileName;
 			}
 		}
@@ -124,7 +134,7 @@ export class MentionFinder {
 		return undefined;
 	}
 
-	private matchStringAtIndex(text: string, index: number, match: string): boolean {
+	private matchStringAtIndex(parser: Parser, word: boolean, text: string, index: number, match: string): boolean {
 		for (let i = 0; i < match.length; i++) {
 			if (index + i >= text.length) {
 				return false;
@@ -135,6 +145,6 @@ export class MentionFinder {
 			}
 		}
 
-		return true;
+		return !word || !parser.isAlphanumeric(index + match.length);
 	}
 }

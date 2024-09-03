@@ -46,4 +46,20 @@ export class Parser {
 			this.advance();
 		}
 	}
+
+	previousAlphanumeric(): boolean {
+		if (this.lineIndex === 0) {
+			return false;
+		}
+		const char = this.currentLine()[this.lineIndex - 1];
+		return /^[\p{L}\p{N}]*$/u.test(char);
+	}
+
+	isAlphanumeric(index: number): boolean {
+		if (index < 0 || index >= this.currentLine().length) {
+			return false;
+		}
+		const char = this.currentLine()[index];
+		return /^[\p{L}\p{N}]*$/u.test(char);
+	}
 }
