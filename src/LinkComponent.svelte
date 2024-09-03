@@ -9,7 +9,7 @@
 		app: App;
 	} = $props();
 
-	let href = $derived(file.path.substring(0, file.path.length - file.extension.length));
+	let href = $derived(file.path);
 
 	function openFile() {
 		app.workspace.openLinkText(href, '', true);
