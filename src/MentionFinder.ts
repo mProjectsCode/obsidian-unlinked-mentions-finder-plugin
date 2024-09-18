@@ -57,15 +57,18 @@ export class MentionFinder {
 		const result: Mention[] = [];
 
 		for (const file of this.plugin.app.vault.getMarkdownFiles()) {
-			let text = await this.plugin.app.vault.cachedRead(file);
-			const frontmatterInfo = getFrontMatterInfo(text);
-			text = text.slice(frontmatterInfo.contentStart);
-
-			const mentions = this.findMentionsInText(text, frontmatterInfo.contentStart, file);
-			result.push(...mentions);
+			result.push(...(await this.findMentionsInFile(file)));
 		}
 
 		return result;
+	}
+
+	async findMentionsInFile(file: TFile): Promise<Mention[]> {
+		let text = await this.plugin.app.vault.cachedRead(file);
+		const frontmatterInfo = getFrontMatterInfo(text);
+		text = text.slice(frontmatterInfo.contentStart);
+
+		return this.findMentionsInText(text, frontmatterInfo.contentStart, file);
 	}
 
 	findMentionsInText(text: string, startIndex: number, file: TFile): Mention[] {

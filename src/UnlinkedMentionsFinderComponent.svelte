@@ -12,21 +12,45 @@
 	} = $props();
 
 	let results: Mention[] = $state([]);
+	let locked: boolean = $state(false);
 
 	function findMentions() {
+		locked = true;
+		results = [];
 		view.mentionFinder.findMentionsInVault().then(res => {
+			locked = false;
 			results = res;
 		});
 	}
 
 	async function linkResult(result: Mention, target: TFile) {
+		locked = true;
+
 		if (await view.mentionFinder.linkMention(result, target)) {
 			results = results.filter(r => r !== result);
+
+			await reScanFile(result.file);
+
+			locked = false;
 		}
+
+		locked = false;
+	}
+
+	async function reScanFile(file: TFile) {
+		const newMentions = await view.mentionFinder.findMentionsInFile(file);
+		const regionStart = results.findIndex(r => r.file === file);
+		if (regionStart === -1) {
+			results.push(...newMentions);
+			return;
+		}
+
+		results = results.filter(r => r.file !== file);
+		results.splice(regionStart, 0, ...newMentions);
 	}
 </script>
 
-<button onclick={() => findMentions()}>Find Mentions</button>
+<button onclick={() => findMentions()} disabled={locked}>Find Mentions</button>
 
 {#if results.length > 0}
 	<table style="width: 100%">
@@ -45,7 +69,7 @@
 					<td>
 						{#each result.mentions as mention}
 							<!-- <LinkComponent file={mention} app={view.plugin.app}></LinkComponent> -->
-							<button onclick={() => void linkResult(result, mention)}>{mention.name}</button>
+							<button onclick={() => void linkResult(result, mention)} disabled={locked}>{mention.name}</button>
 						{/each}
 					</td>
 				</tr>
