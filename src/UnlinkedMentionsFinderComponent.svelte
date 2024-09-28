@@ -48,9 +48,18 @@
 		results = results.filter(r => r.file !== file);
 		results.splice(regionStart, 0, ...newMentions);
 	}
+
+	async function rebuildFileNameIndex() {
+		locked = true;
+		await view.mentionFinder.rebuildFileNameIndex().then(res => {
+			locked = false;
+			results = res;
+		});
+	}
 </script>
 
 <button onclick={() => findMentions()} disabled={locked}>Find Mentions</button>
+<button onclick={() => rebuildFileNameIndex()} disabled={locked}>Update File Index</button>
 
 {#if results.length > 0}
 	<table style="width: 100%">
@@ -76,6 +85,8 @@
 			{/each}
 		</tbody>
 	</table>
+{:else if locked}
+	<p>Searching...</p>
 {:else}
 	<p>No mentions found</p>
 {/if}

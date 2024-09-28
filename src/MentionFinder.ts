@@ -26,6 +26,11 @@ export class MentionFinder {
 		this.buildFileNameIndex();
 	}
 
+	async rebuildFileNameIndex(): Promise<Mention[]> {
+		this.buildFileNameIndex();
+		return this.findMentionsInVault();
+	}
+
 	private buildFileNameIndex(): void {
 		this.fileNameMap.clear();
 
