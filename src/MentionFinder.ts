@@ -2,6 +2,7 @@ import type { TFile } from 'obsidian';
 import { getFrontMatterInfo, parseFrontMatterAliases } from 'obsidian';
 import type UnlinkedMentionsFinderPlugin from 'src/main';
 import { Parser } from 'src/Parser';
+import { Trie } from 'src/Trie';
 
 export interface Mention {
 	text: string;
@@ -17,6 +18,7 @@ export class MentionFinder {
 	plugin: UnlinkedMentionsFinderPlugin;
 	fileNames: string[] = [];
 	fileNameMap = new Map<string, TFile[]>();
+	fileNameTrie = new Trie<TFile[]>();
 
 	constructor(plugin: UnlinkedMentionsFinderPlugin) {
 		this.plugin = plugin;
@@ -46,6 +48,14 @@ export class MentionFinder {
 
 		this.fileNames = Array.from(this.fileNameMap.keys());
 		this.fileNames.sort((a, b) => b.length - a.length);
+
+		this.fileNameTrie = new Trie<TFile[]>();
+		for (const fileName of this.fileNames) {
+			const entry = this.fileNameMap.get(fileName);
+			if (entry && entry.length > 0) {
+				this.fileNameTrie.insert(fileName, entry);
+			}
+		}
 	}
 
 	private insertIntoFileNameMap(fileName: string, file: TFile): void {
@@ -109,12 +119,12 @@ export class MentionFinder {
 				continue;
 			}
 
-			const mention = this.findMention(parser, parser.currentLine(), parser.lineIndex);
-			if (mention) {
-				let files = this.fileNameMap.get(mention.toLowerCase()) ?? [];
-				files = files.filter(f => f.path !== file.path);
+			// const mention = this.findMention(parser, parser.currentLine(), parser.lineIndex);
+			const mention = this.fileNameTrie.findLongestPrefix(parser.currentLine(), parser.lineIndex);
+			if (mention.value && !parser.isAlphanumeric(parser.lineIndex + mention.length)) {
+				const files = mention.value.filter(f => f.path !== file.path);
 
-				if (files.length > 0) {
+				if (files.length !== 0) {
 					result.push({
 						text: parser.currentLine().substring(parser.lineIndex, parser.lineIndex + mention.length),
 						file: file,
@@ -122,7 +132,7 @@ export class MentionFinder {
 						line: parser.currentLine(),
 						lineNumber: parser.lineNumber,
 						lineIndex: parser.lineIndex,
-						mentions: files,
+						mentions: mention.value.filter(f => f.path !== file.path),
 					});
 				}
 
