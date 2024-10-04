@@ -18,7 +18,7 @@ export class Trie<T> {
 		let lastEndOfWord = node.isEndOfWord ? node : undefined;
 
 		for (let i = startIndex; i < word.length; i++) {
-			const char = word[i];
+			const char = word[i].toLowerCase();
 			const child = node.children.get(char);
 			if (!child) {
 				break;

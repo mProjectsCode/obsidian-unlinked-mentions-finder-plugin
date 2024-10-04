@@ -114,13 +114,15 @@ export class MentionFinder {
 				continue;
 			}
 
-			if (!(parser.isAlphanumeric(parser.lineIndex) && !parser.isAlphanumeric(parser.lineIndex - 1))) {
+			if (!parser.isAlphanumeric(parser.lineIndex) || parser.isAlphanumeric(parser.lineIndex - 1)) {
 				parser.advance();
 				continue;
 			}
 
 			// const mention = this.findMention(parser, parser.currentLine(), parser.lineIndex);
 			const mention = this.fileNameTrie.findLongestPrefix(parser.currentLine(), parser.lineIndex);
+			// console.log(mention, parser.currentLine(), parser.lineIndex);
+
 			if (mention.value && !parser.isAlphanumeric(parser.lineIndex + mention.length)) {
 				const files = mention.value.filter(f => f.path !== file.path);
 
