@@ -1,7 +1,7 @@
 {
 	"id": "unlinked-mentions-finder",
 	"name": "Unlinked Mentions Finder",
-	"version": "0.0.1-canary.20241001T171729",
+	"version": "0.0.1-canary.20241004T134303",
 	"minAppVersion": "1.6.0",
 	"description": "Find unlinked mentions across an entire vault.",
 	"author": "Moritz Jung",
