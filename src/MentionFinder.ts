@@ -134,7 +134,7 @@ export class MentionFinder {
 						line: parser.currentLine(),
 						lineNumber: parser.lineNumber,
 						lineIndex: parser.lineIndex,
-						mentions: mention.value.filter(f => f.path !== file.path),
+						mentions: files,
 					});
 				}
 
