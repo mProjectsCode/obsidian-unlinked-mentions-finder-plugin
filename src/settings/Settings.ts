@@ -1,7 +1,7 @@
 export interface MyPluginSettings {
-	mySetting: string;
+	linkToSelf: boolean;
 }
 
 export const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default',
+	linkToSelf: false,
 };

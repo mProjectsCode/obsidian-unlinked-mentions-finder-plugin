@@ -15,16 +15,13 @@ export class SampleSettingTab extends PluginSettingTab {
 		this.containerEl.empty();
 
 		new Setting(this.containerEl)
-			.setName('Setting #1')
-			.setDesc("It's a secret")
-			.addText(text =>
-				text
-					.setPlaceholder('Enter your secret')
-					.setValue(this.plugin.settings.mySetting)
-					.onChange(async value => {
-						this.plugin.settings.mySetting = value;
-						await this.plugin.saveSettings();
-					}),
-			);
+			.setName('Link to self')
+			.setDesc('Allows a note to link to itself.')
+			.addToggle(toggle => {
+				toggle.setValue(this.plugin.settings.linkToSelf).onChange(value => {
+					this.plugin.settings.linkToSelf = value;
+					void this.plugin.saveSettings();
+				});
+			});
 	}
 }

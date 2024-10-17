@@ -124,7 +124,7 @@ export class MentionFinder {
 			// console.log(mention, parser.currentLine(), parser.lineIndex);
 
 			if (mention.value && !parser.isAlphanumeric(parser.lineIndex + mention.length)) {
-				const files = mention.value.filter(f => f.path !== file.path);
+				const files = this.plugin.settings.linkToSelf ? mention.value : mention.value.filter(f => f.path !== file.path);
 
 				if (files.length !== 0) {
 					result.push({
