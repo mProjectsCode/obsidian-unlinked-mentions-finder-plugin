@@ -58,22 +58,27 @@ export default class UnlinkedMentionsFinderPlugin extends Plugin {
 
 	async safeReplaceAtIndex(file: TFile, index: number, str: string, replacement: string): Promise<boolean> {
 		try {
-			const text = await this.app.vault.read(file);
-			const pre = text.slice(0, index);
-			const post = text.slice(index + str.length);
-			const oldText = text.slice(index, index + str.length);
-			if (oldText !== str) {
-				new Notice('Failed to replace text. The text has changed since it was found.');
-				return false;
-			}
-			await this.app.vault.modify(file, pre + replacement + post);
+			let modified = false;
+			await this.app.vault.process(file, text => {
+				const pre = text.slice(0, index);
+				const post = text.slice(index + str.length);
+				const oldText = text.slice(index, index + str.length);
+
+				if (oldText !== str) {
+					new Notice('Failed to replace text. The text has changed since it was found.');
+					return text;
+				}
+
+				modified = true;
+				return pre + replacement + post;
+			});
+
+			return modified;
 		} catch (e) {
 			new Notice('Failed to replace text. See the console for more info.');
 			console.warn(e);
 			return false;
 		}
-
-		return true;
 	}
 
 	generateLink(file: TFile, sourcePath: string, text: string): string {
