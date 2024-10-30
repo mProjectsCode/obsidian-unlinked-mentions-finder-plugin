@@ -48,6 +48,10 @@ export class MentionFinder {
 		this.fileNameMap.clear();
 
 		for (const file of this.plugin.app.vault.getFiles()) {
+			if (this.plugin.settings.onlyIndexMarkdownFiles && !file.extension.toLowerCase().includes('md')) {
+				continue;
+			}
+
 			const frontmatter = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
 			// ignore flag
 			if (frontmatter?.[IGNORE_PROPERTY] === true) {

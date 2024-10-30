@@ -23,5 +23,15 @@ export class SampleSettingTab extends PluginSettingTab {
 					void this.plugin.saveSettings();
 				});
 			});
+
+		new Setting(this.containerEl)
+			.setName('Only find unlinked mentions of markdown files')
+			.setDesc(`Only find unlinked mentions of markdown files and don't find unlinked mentions of other file types such as PDFs.`)
+			.addToggle(toggle => {
+				toggle.setValue(this.plugin.settings.onlyIndexMarkdownFiles).onChange(value => {
+					this.plugin.settings.onlyIndexMarkdownFiles = value;
+					void this.plugin.saveSettings();
+				});
+			});
 	}
 }
