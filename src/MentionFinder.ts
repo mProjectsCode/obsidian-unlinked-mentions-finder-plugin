@@ -61,7 +61,7 @@ export class MentionFinder {
 				this.insertIntoFileNameMap(file.basename, file, caseSensitive);
 			}
 
-			if (frontmatter?.[IGNORE_ALIASES_PROPERTY] === true) {
+			if (frontmatter?.[IGNORE_ALIASES_PROPERTY] !== true) {
 				const aliases = parseFrontMatterAliases(frontmatter) ?? [];
 				for (const alias of aliases) {
 					this.insertIntoFileNameMap(alias, file, caseSensitive);
