@@ -9,7 +9,6 @@ export default class UnlinkedMentionsFinderPlugin extends Plugin {
 	// @ts-ignore defined in on load;
 	settings: MyPluginSettings;
 
-	// eslint-disable-next-line @typescript-eslint/no-misused-promises
 	async onload(): Promise<void> {
 		await this.loadSettings();
 
@@ -53,7 +52,7 @@ export default class UnlinkedMentionsFinderPlugin extends Plugin {
 		}
 
 		// "Reveal" the leaf in case it is in a collapsed sidebar
-		workspace.revealLeaf(leaf);
+		await workspace.revealLeaf(leaf);
 	}
 
 	async safeReplaceAtIndex(file: TFile, index: number, str: string, replacement: string): Promise<boolean> {

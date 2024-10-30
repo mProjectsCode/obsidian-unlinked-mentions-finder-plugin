@@ -13,7 +13,7 @@ export class Trie<T> {
 		return this.root.has(word);
 	}
 
-	findLongestPrefix(word: string, startIndex: number = 0): { value: T | undefined; length: number } {
+	findLongestPrefix(word: string, startIndex: number = 0): { value: T | undefined; length: number; str: string } {
 		let node = this.root;
 		let lastEndOfWord = node.isEndOfWord ? node : undefined;
 
@@ -34,6 +34,7 @@ export class Trie<T> {
 		return {
 			value: lastEndOfWord?.value,
 			length: lastEndOfWord?.depth ?? 0,
+			str: word.slice(startIndex, startIndex + (lastEndOfWord?.depth ?? 0)),
 		};
 	}
 }

@@ -4,6 +4,11 @@ import type UnlinkedMentionsFinderPlugin from 'src/main';
 import { Parser } from 'src/Parser';
 import { Trie } from 'src/Trie';
 
+const IGNORE_PROPERTY = 'ulmf_ignore';
+const CASE_SENSITIVE_PROPERTY = 'ulmf_case_sensitive';
+const IGNORE_ALIASES_PROPERTY = 'ulmf_ignore_aliases';
+const IGNORE_TITLE_PROPERTY = 'ulmf_ignore_title';
+
 export interface Mention {
 	text: string;
 	file: TFile;
@@ -14,11 +19,17 @@ export interface Mention {
 	mentions: TFile[];
 }
 
+export interface IndexEntry {
+	file: TFile;
+	caseSensitive: boolean;
+	str: string;
+}
+
 export class MentionFinder {
 	plugin: UnlinkedMentionsFinderPlugin;
 	fileNames: string[] = [];
-	fileNameMap = new Map<string, TFile[]>();
-	fileNameTrie = new Trie<TFile[]>();
+	fileNameMap = new Map<string, IndexEntry[]>();
+	fileNameTrie = new Trie<IndexEntry[]>();
 
 	constructor(plugin: UnlinkedMentionsFinderPlugin) {
 		this.plugin = plugin;
@@ -37,19 +48,31 @@ export class MentionFinder {
 		this.fileNameMap.clear();
 
 		for (const file of this.plugin.app.vault.getFiles()) {
-			this.insertIntoFileNameMap(file.basename, file);
-
 			const frontmatter = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
-			const aliases = parseFrontMatterAliases(frontmatter) ?? [];
-			for (const alias of aliases) {
-				this.insertIntoFileNameMap(alias, file);
+			// ignore flag
+			if (frontmatter?.[IGNORE_PROPERTY] === true) {
+				continue;
+			}
+
+			const caseSensitive = frontmatter?.[CASE_SENSITIVE_PROPERTY] === true;
+
+			// aliases only flag
+			if (frontmatter?.[IGNORE_TITLE_PROPERTY] !== true) {
+				this.insertIntoFileNameMap(file.basename, file, caseSensitive);
+			}
+
+			if (frontmatter?.[IGNORE_ALIASES_PROPERTY] === true) {
+				const aliases = parseFrontMatterAliases(frontmatter) ?? [];
+				for (const alias of aliases) {
+					this.insertIntoFileNameMap(alias, file, caseSensitive);
+				}
 			}
 		}
 
 		this.fileNames = Array.from(this.fileNameMap.keys());
 		this.fileNames.sort((a, b) => b.length - a.length);
 
-		this.fileNameTrie = new Trie<TFile[]>();
+		this.fileNameTrie = new Trie<IndexEntry[]>();
 		for (const fileName of this.fileNames) {
 			const entry = this.fileNameMap.get(fileName);
 			if (entry && entry.length > 0) {
@@ -58,13 +81,23 @@ export class MentionFinder {
 		}
 	}
 
-	private insertIntoFileNameMap(fileName: string, file: TFile): void {
-		fileName = fileName.toLowerCase();
+	private insertIntoFileNameMap(fileName: string, file: TFile, caseSensitive: boolean): void {
+		const lowerCaseFileName = fileName.toLowerCase();
 
-		if (this.fileNameMap.has(fileName)) {
-			this.fileNameMap.get(fileName)?.push(file);
+		if (this.fileNameMap.has(lowerCaseFileName)) {
+			this.fileNameMap.get(lowerCaseFileName)?.push({
+				file: file,
+				caseSensitive: caseSensitive,
+				str: fileName,
+			});
 		} else {
-			this.fileNameMap.set(fileName, [file]);
+			this.fileNameMap.set(lowerCaseFileName, [
+				{
+					file: file,
+					caseSensitive: caseSensitive,
+					str: fileName,
+				},
+			]);
 		}
 	}
 
@@ -124,7 +157,22 @@ export class MentionFinder {
 			// console.log(mention, parser.currentLine(), parser.lineIndex);
 
 			if (mention.value && !parser.isAlphanumeric(parser.lineIndex + mention.length)) {
-				const files = this.plugin.settings.linkToSelf ? mention.value : mention.value.filter(f => f.path !== file.path);
+				// let files = this.plugin.settings.linkToSelf ? mention.value : mention.value.filter(e => e.file.path !== file.path);
+				// files = files.filter(e => e.caseSensitive ? e.str === mention.str : e);
+
+				const files = new Array<TFile>();
+
+				for (const element of mention.value) {
+					if (!this.plugin.settings.linkToSelf && element.file.path === file.path) {
+						continue;
+					}
+
+					if (element.caseSensitive && element.str !== mention.str) {
+						continue;
+					}
+
+					files.push(element.file);
+				}
 
 				if (files.length !== 0) {
 					result.push({
@@ -144,16 +192,6 @@ export class MentionFinder {
 			}
 		}
 		return result;
-	}
-
-	private findMention(parser: Parser, text: string, index: number): string | undefined {
-		for (const fileName of this.fileNames) {
-			if (this.matchStringAtIndex(parser, true, text, index, fileName)) {
-				return fileName;
-			}
-		}
-
-		return undefined;
 	}
 
 	private matchStringAtIndex(parser: Parser, word: boolean, text: string, index: number, match: string): boolean {
