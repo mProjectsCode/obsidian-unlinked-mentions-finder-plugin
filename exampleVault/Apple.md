@@ -1,5 +1,5 @@
 ---
-aliases: Banana, Apple Pie, Pie
+aliases: [Banana, Apple Pie, Pie]
 ---
 
 hello

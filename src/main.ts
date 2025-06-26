@@ -55,6 +55,18 @@ export default class UnlinkedMentionsFinderPlugin extends Plugin {
 		await workspace.revealLeaf(leaf);
 	}
 
+	/**
+	 * Replaces a string at a specific index in a file.
+	 * This checks that the string at the index matches the expected string before replacing it.
+	 * If the string matches and the replacement is successful, it returns true.
+	 * If the replacement was unsuccessful (e.g., the string at the index has changed), it returns false.
+	 *
+	 * @param file
+	 * @param index
+	 * @param str
+	 * @param replacement
+	 * @returns
+	 */
 	async safeReplaceAtIndex(file: TFile, index: number, str: string, replacement: string): Promise<boolean> {
 		try {
 			let modified = false;

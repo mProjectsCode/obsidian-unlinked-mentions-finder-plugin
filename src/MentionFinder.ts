@@ -4,6 +4,7 @@ import type UnlinkedMentionsFinderPlugin from 'src/main';
 import { Parser } from 'src/Parser';
 import { Trie } from 'src/Trie';
 
+const SKIP_PROPERTY = 'ulmf_skip';
 const IGNORE_PROPERTY = 'ulmf_ignore';
 const CASE_SENSITIVE_PROPERTY = 'ulmf_case_sensitive';
 const IGNORE_ALIASES_PROPERTY = 'ulmf_ignore_aliases';
@@ -27,7 +28,6 @@ export interface IndexEntry {
 
 export class MentionFinder {
 	plugin: UnlinkedMentionsFinderPlugin;
-	fileNames: string[] = [];
 	fileNameMap = new Map<string, IndexEntry[]>();
 	fileNameTrie = new Trie<IndexEntry[]>();
 
@@ -73,14 +73,10 @@ export class MentionFinder {
 			}
 		}
 
-		this.fileNames = Array.from(this.fileNameMap.keys());
-		this.fileNames.sort((a, b) => b.length - a.length);
-
 		this.fileNameTrie = new Trie<IndexEntry[]>();
-		for (const fileName of this.fileNames) {
-			const entry = this.fileNameMap.get(fileName);
+		for (const [name, entry] of this.fileNameMap) {
 			if (entry && entry.length > 0) {
-				this.fileNameTrie.insert(fileName, entry);
+				this.fileNameTrie.insert(name, entry);
 			}
 		}
 	}
@@ -106,13 +102,18 @@ export class MentionFinder {
 	}
 
 	async findMentionsInVault(): Promise<Mention[]> {
-		const result: Mention[] = [];
+		const intermediate = await Promise.all(
+			this.plugin.app.vault
+				.getMarkdownFiles()
+				.filter(file => {
+					return this.plugin.app.metadataCache.getFileCache(file)?.frontmatter?.[SKIP_PROPERTY] !== true;
+				})
+				.map(async file => {
+					return await this.findMentionsInFile(file);
+				}),
+		);
 
-		for (const file of this.plugin.app.vault.getMarkdownFiles()) {
-			result.push(...(await this.findMentionsInFile(file)));
-		}
-
-		return result;
+		return intermediate.flat();
 	}
 
 	async findMentionsInFile(file: TFile): Promise<Mention[]> {
@@ -129,42 +130,50 @@ export class MentionFinder {
 		let inLink = false;
 
 		while (!parser.atEnd) {
-			if (parser.lineIndex === 0 && parser.current() === '#') {
+			// line starts with a hashtag, so it's a header, so we skip it
+			if (parser.lineIndex === 0 && parser.currentMatches('#')) {
 				parser.advanceToNextLine();
 				continue;
 			}
 
-			if (this.matchStringAtIndex(parser, false, parser.currentLine(), parser.lineIndex, '[[')) {
+			// we found the beginning of a link
+			if (parser.currentMatches('[') && parser.nextMatches('[')) {
 				inLink = true;
 				parser.advanceN(2);
 				continue;
 			}
 
-			if (this.matchStringAtIndex(parser, false, parser.currentLine(), parser.lineIndex, ']]')) {
+			// we found the end of a link
+			if (parser.currentMatches(']') && parser.nextMatches(']')) {
 				inLink = false;
 				parser.advanceN(2);
 				continue;
 			}
 
+			// do nothing if we are in a link
 			if (inLink) {
 				parser.advance();
 				continue;
 			}
 
-			if (!parser.isAlphanumeric(parser.lineIndex) || parser.isAlphanumeric(parser.lineIndex - 1)) {
+			// we only want to match at the beginning of a word, so search for a place where non letters end.
+			// e.g. "foo bar (baz)"
+			//       ^   ^    ^
+			// are the positions where we want to match
+			//
+			// so we skip if we see whitespace or punctuation
+			// and we skip if the previous character was a letter, because then we are in the middle of a word
+			if (!parser.currentAlphanumeric() || parser.previousAlphanumeric()) {
 				parser.advance();
 				continue;
 			}
 
-			// const mention = this.findMention(parser, parser.currentLine(), parser.lineIndex);
 			const mention = this.fileNameTrie.findLongestPrefix(parser.currentLine(), parser.lineIndex);
-			// console.log(mention, parser.currentLine(), parser.lineIndex);
 
-			if (mention.value && !parser.isAlphanumeric(parser.lineIndex + mention.length)) {
-				// let files = this.plugin.settings.linkToSelf ? mention.value : mention.value.filter(e => e.file.path !== file.path);
-				// files = files.filter(e => e.caseSensitive ? e.str === mention.str : e);
-
-				const files = new Array<TFile>();
+			// if we found a mention and the mention is followed by a non-alphanumeric character,
+			// we can safely assume that this is a mention and not part of a word
+			if (mention && !parser.isAlphanumeric(parser.lineIndex + mention.length)) {
+				const files = [];
 
 				for (const element of mention.value) {
 					if (!this.plugin.settings.linkToSelf && element.file.path === file.path) {
@@ -196,20 +205,6 @@ export class MentionFinder {
 			}
 		}
 		return result;
-	}
-
-	private matchStringAtIndex(parser: Parser, word: boolean, text: string, index: number, match: string): boolean {
-		for (let i = 0; i < match.length; i++) {
-			if (index + i >= text.length) {
-				return false;
-			}
-
-			if (text[index + i].toLowerCase() !== match[i]) {
-				return false;
-			}
-		}
-
-		return !word || !parser.isAlphanumeric(index + match.length);
 	}
 
 	async linkMention(mention: Mention, target: TFile): Promise<boolean> {

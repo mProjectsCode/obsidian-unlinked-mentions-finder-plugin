@@ -53,6 +53,19 @@ export class Parser {
 		}
 	}
 
+	isAlphanumeric(index: number): boolean {
+		if (index < 0 || index >= this.currentLine().length) {
+			return false;
+		}
+		const char = this.currentLine()[index];
+		return /^[\p{L}\p{N}]*$/u.test(char);
+	}
+
+	currentAlphanumeric(): boolean {
+		const char = this.current();
+		return /^[\p{L}\p{N}]*$/u.test(char);
+	}
+
 	previousAlphanumeric(): boolean {
 		if (this.lineIndex === 0) {
 			return false;
@@ -61,11 +74,32 @@ export class Parser {
 		return /^[\p{L}\p{N}]*$/u.test(char);
 	}
 
-	isAlphanumeric(index: number): boolean {
-		if (index < 0 || index >= this.currentLine().length) {
+	nextAlphanumeric(): boolean {
+		if (this.lineIndex + 1 >= this.currentLine().length) {
 			return false;
 		}
-		const char = this.currentLine()[index];
+		const char = this.currentLine()[this.lineIndex + 1];
 		return /^[\p{L}\p{N}]*$/u.test(char);
+	}
+
+	currentMatches(match: string): boolean {
+		const char = this.current();
+		return char === match;
+	}
+
+	previousMatches(match: string): boolean {
+		if (this.lineIndex === 0) {
+			return false;
+		}
+		const char = this.currentLine()[this.lineIndex - 1];
+		return char === match;
+	}
+
+	nextMatches(match: string): boolean {
+		if (this.lineIndex + 1 >= this.currentLine().length) {
+			return false;
+		}
+		const char = this.currentLine()[this.lineIndex + 1];
+		return char === match;
 	}
 }

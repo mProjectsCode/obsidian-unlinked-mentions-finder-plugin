@@ -12,4 +12,4 @@ appleasda
 
 asdapple
 
-[[Apple|apple pie]]
+apple pie

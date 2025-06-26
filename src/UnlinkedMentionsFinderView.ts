@@ -43,7 +43,7 @@ export class UnlinkedMentionsFinderView extends ItemView {
 
 	protected async onClose(): Promise<void> {
 		if (this.component) {
-			unmount(this.component);
+			void unmount(this.component);
 		}
 	}
 }
