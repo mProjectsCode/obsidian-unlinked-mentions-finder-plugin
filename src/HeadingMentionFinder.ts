@@ -5,8 +5,8 @@ import type UnlinkedMentionsFinderPlugin from 'src/main';
 import type { Mention } from 'src/MentionFinder';
 import { Parser } from 'src/utils/Parser';
 
-const HEADING_REGEXP = /^[\W\D]?(\w\d+)(\w?)\b/;
-const MENTION_REGEXP = /^(\w\d+)(\w?)\b/;
+const HEADING_REGEXP = /^[\W\D]?([a-zA-Z]\d+)([a-zA-Z]?)\b/;
+const MENTION_REGEXP = /^([a-zA-Z]\d+)([a-zA-Z])\b/;
 
 interface IndexEntry {
 	// like `A45`
