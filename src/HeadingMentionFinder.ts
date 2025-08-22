@@ -71,8 +71,8 @@ export class HeadingMentionFinder implements IMentionFinder<string> {
 			if (subEntry) {
 				return subEntry;
 			} else {
-                return entry.subEntries.get(undefined);
-            }
+				return entry.subEntries.get(undefined);
+			}
 		}
 		return undefined;
 	}
