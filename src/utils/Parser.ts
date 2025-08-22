@@ -1,7 +1,10 @@
 export class Parser {
 	lines: string[];
+	// current line number (1-based)
 	lineNumber: number;
+	// index in the current line
 	lineIndex: number;
+	// index in the entire text
 	index: number;
 	atEnd: boolean;
 

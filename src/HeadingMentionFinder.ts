@@ -128,7 +128,7 @@ export class HeadingMentionFinder implements IMentionFinder<string> {
 			}
 
 			const line = parser.currentLine();
-			const match = MENTION_REGEXP.exec(line);
+			const match = MENTION_REGEXP.exec(line.slice(parser.lineIndex));
 			if (match) {
 				const identifier = match[1];
 				const subIdentifier = match[2] || undefined;
