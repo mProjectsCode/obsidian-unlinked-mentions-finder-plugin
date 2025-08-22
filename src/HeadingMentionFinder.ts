@@ -67,7 +67,12 @@ export class HeadingMentionFinder implements IMentionFinder<string> {
 	private findBestMatch(identifier: string, subIdentifier: string | undefined, index: IndexEntry[]): string | undefined {
 		const entry = index.find(entry => entry.identifier === identifier);
 		if (entry) {
-			return entry.subEntries.get(subIdentifier);
+			const subEntry = entry.subEntries.get(subIdentifier);
+			if (subEntry) {
+				return subEntry;
+			} else {
+                return entry.subEntries.get(undefined);
+            }
 		}
 		return undefined;
 	}
