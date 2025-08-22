@@ -1,9 +1,14 @@
 import type { TFile, WorkspaceLeaf } from 'obsidian';
 import { Notice, Plugin } from 'obsidian';
+import { HeadingMentionFinder } from 'src/HeadingMentionFinder';
+import { MentionFinder } from 'src/MentionFinder';
 import type { MyPluginSettings } from 'src/settings/Settings';
 import { DEFAULT_SETTINGS } from 'src/settings/Settings';
 import { SampleSettingTab } from 'src/settings/SettingTab';
-import { UNLINKED_MENTIONS_FINDER_VIEW_TYPE, UnlinkedMentionsFinderView } from 'src/UnlinkedMentionsFinderView';
+import { UnlinkedMentionsFinderView } from 'src/ui/UnlinkedMentionsFinderView';
+
+export const UNLINKED_MENTIONS_FINDER_VIEW_TYPE = 'unlinked-mentions-finder-view';
+export const UNLINKED_HEADING_MENTIONS_FINDER_VIEW_TYPE = 'unlinked-heading-mentions-finder-view';
 
 export default class UnlinkedMentionsFinderPlugin extends Plugin {
 	// @ts-ignore defined in on load;
@@ -14,13 +19,29 @@ export default class UnlinkedMentionsFinderPlugin extends Plugin {
 
 		this.addSettingTab(new SampleSettingTab(this.app, this));
 
-		this.registerView(UNLINKED_MENTIONS_FINDER_VIEW_TYPE, (leaf: WorkspaceLeaf) => new UnlinkedMentionsFinderView(leaf, this));
+		this.registerView(UNLINKED_MENTIONS_FINDER_VIEW_TYPE, (leaf: WorkspaceLeaf) => {
+			const mentionFinder = new MentionFinder(this);
+			return new UnlinkedMentionsFinderView(UNLINKED_MENTIONS_FINDER_VIEW_TYPE, leaf, this, mentionFinder);
+		});
+
+		this.registerView(UNLINKED_HEADING_MENTIONS_FINDER_VIEW_TYPE, (leaf: WorkspaceLeaf) => {
+			const mentionFinder = new HeadingMentionFinder(this);
+			return new UnlinkedMentionsFinderView(UNLINKED_HEADING_MENTIONS_FINDER_VIEW_TYPE, leaf, this, mentionFinder);
+		});
 
 		this.addCommand({
 			id: 'open-unlinked-mentions-finder',
 			name: 'Open Unlinked Mentions Finder',
 			callback: async () => {
 				await this.activateView(UNLINKED_MENTIONS_FINDER_VIEW_TYPE);
+			},
+		});
+
+		this.addCommand({
+			id: 'open-unlinked-heading-mentions-finder',
+			name: 'Open Unlinked Heading Mentions Finder',
+			callback: async () => {
+				await this.activateView(UNLINKED_HEADING_MENTIONS_FINDER_VIEW_TYPE);
 			},
 		});
 	}
@@ -61,21 +82,21 @@ export default class UnlinkedMentionsFinderPlugin extends Plugin {
 	 * If the string matches and the replacement is successful, it returns true.
 	 * If the replacement was unsuccessful (e.g., the string at the index has changed), it returns false.
 	 *
-	 * @param file
-	 * @param index
-	 * @param str
-	 * @param replacement
+	 * @param file the file to replace in
+	 * @param index the start index of the expected string
+	 * @param expected the expected string at the position
+	 * @param replacement the replacement string for the expected string
 	 * @returns
 	 */
-	async safeReplaceAtIndex(file: TFile, index: number, str: string, replacement: string): Promise<boolean> {
+	async safeReplaceAtIndex(file: TFile, index: number, expected: string, replacement: string): Promise<boolean> {
 		try {
 			let modified = false;
 			await this.app.vault.process(file, text => {
 				const pre = text.slice(0, index);
-				const post = text.slice(index + str.length);
-				const oldText = text.slice(index, index + str.length);
+				const post = text.slice(index + expected.length);
+				const oldText = text.slice(index, index + expected.length);
 
-				if (oldText !== str) {
+				if (oldText !== expected) {
 					new Notice('Failed to replace text. The text has changed since it was found.');
 					return text;
 				}
@@ -90,9 +111,5 @@ export default class UnlinkedMentionsFinderPlugin extends Plugin {
 			console.warn(e);
 			return false;
 		}
-	}
-
-	generateLink(file: TFile, sourcePath: string, text: string): string {
-		return this.app.fileManager.generateMarkdownLink(file, sourcePath, '', text);
 	}
 }

@@ -1,28 +1,27 @@
 import type { WorkspaceLeaf } from 'obsidian';
 import { ItemView } from 'obsidian';
+import type { IMentionFinder } from 'src/IMentionFinder';
 import type UnlinkedMentionsFinderPlugin from 'src/main';
-import { MentionFinder } from 'src/MentionFinder';
-import UnlinkedMentionsFinderComponent from 'src/UnlinkedMentionsFinderComponent.svelte';
+import UnlinkedMentionsFinderComponent from 'src/ui/UnlinkedMentionsFinderComponent.svelte';
 import type { Component as SvelteComponent } from 'svelte';
 import { mount, unmount } from 'svelte';
 
-export const UNLINKED_MENTIONS_FINDER_VIEW_TYPE = 'unlinked-mentions-finder-view';
-
-export class UnlinkedMentionsFinderView extends ItemView {
+export class UnlinkedMentionsFinderView<T> extends ItemView {
 	component: ReturnType<SvelteComponent> | undefined;
 	plugin: UnlinkedMentionsFinderPlugin;
-	mentionFinder: MentionFinder;
+	mentionFinder: IMentionFinder<T>;
+	viewType: string;
 
-	constructor(leaf: WorkspaceLeaf, plugin: UnlinkedMentionsFinderPlugin) {
+	constructor(viewType: string, leaf: WorkspaceLeaf, plugin: UnlinkedMentionsFinderPlugin, mentionFinder: IMentionFinder<T>) {
 		super(leaf);
 
+		this.viewType = viewType;
 		this.plugin = plugin;
-		this.mentionFinder = new MentionFinder(plugin);
-		this.mentionFinder.init();
+		this.mentionFinder = mentionFinder;
 	}
 
 	getViewType(): string {
-		return UNLINKED_MENTIONS_FINDER_VIEW_TYPE;
+		return this.viewType;
 	}
 
 	getDisplayText(): string {

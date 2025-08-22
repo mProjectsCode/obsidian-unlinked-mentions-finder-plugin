@@ -1,7 +1,7 @@
-<script lang="ts">
-	import type { Mention } from './MentionFinder';
+<script lang="ts" generics="T">
+	import type { Mention } from '../MentionFinder';
 
-	let { mention }: { mention: Mention } = $props();
+	let { mention }: { mention: Mention<T> } = $props();
 
 	let m = $state(mention);
 

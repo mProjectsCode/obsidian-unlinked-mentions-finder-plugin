@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
-import { Trie } from 'src/Trie';
+import { Trie } from 'src/utils/Trie';
 
 describe('Trie', () => {
 	let trie: Trie<number>;

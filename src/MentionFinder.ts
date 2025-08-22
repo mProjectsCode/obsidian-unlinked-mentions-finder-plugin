@@ -1,23 +1,26 @@
 import type { TFile } from 'obsidian';
 import { getFrontMatterInfo, parseFrontMatterAliases } from 'obsidian';
+import type { IMentionFinder } from 'src/IMentionFinder';
 import type UnlinkedMentionsFinderPlugin from 'src/main';
-import { Parser } from 'src/Parser';
-import { Trie } from 'src/Trie';
+import { Parser } from 'src/utils/Parser';
+import { Trie } from 'src/utils/Trie';
 
+// These files are not checked for mentions
 const SKIP_PROPERTY = 'ulmf_skip';
+// These files are ignored in indexing
 const IGNORE_PROPERTY = 'ulmf_ignore';
 const CASE_SENSITIVE_PROPERTY = 'ulmf_case_sensitive';
 const IGNORE_ALIASES_PROPERTY = 'ulmf_ignore_aliases';
 const IGNORE_TITLE_PROPERTY = 'ulmf_ignore_title';
 
-export interface Mention {
+export interface Mention<T> {
 	text: string;
 	file: TFile;
 	line: string;
 	index: number;
 	lineNumber: number;
 	lineIndex: number;
-	mentions: TFile[];
+	mentions: T[];
 }
 
 export interface IndexEntry {
@@ -26,21 +29,21 @@ export interface IndexEntry {
 	str: string;
 }
 
-export class MentionFinder {
+export class MentionFinder implements IMentionFinder<TFile> {
 	plugin: UnlinkedMentionsFinderPlugin;
 	fileNameMap = new Map<string, IndexEntry[]>();
 	fileNameTrie = new Trie<IndexEntry[]>();
 
 	constructor(plugin: UnlinkedMentionsFinderPlugin) {
 		this.plugin = plugin;
-	}
-
-	init(): void {
 		this.buildFileNameIndex();
 	}
 
-	async rebuildFileNameIndex(): Promise<Mention[]> {
-		this.buildFileNameIndex();
+	async findMentions(rebuildIndex: boolean): Promise<Mention<TFile>[]> {
+		if (rebuildIndex) {
+			this.buildFileNameIndex();
+		}
+
 		return this.findMentionsInVault();
 	}
 
@@ -101,7 +104,7 @@ export class MentionFinder {
 		}
 	}
 
-	async findMentionsInVault(): Promise<Mention[]> {
+	async findMentionsInVault(): Promise<Mention<TFile>[]> {
 		const intermediate = await Promise.all(
 			this.plugin.app.vault
 				.getMarkdownFiles()
@@ -116,7 +119,7 @@ export class MentionFinder {
 		return intermediate.flat();
 	}
 
-	async findMentionsInFile(file: TFile): Promise<Mention[]> {
+	async findMentionsInFile(file: TFile): Promise<Mention<TFile>[]> {
 		let text = await this.plugin.app.vault.cachedRead(file);
 		const frontmatterInfo = getFrontMatterInfo(text);
 		text = text.slice(frontmatterInfo.contentStart);
@@ -124,8 +127,8 @@ export class MentionFinder {
 		return this.findMentionsInText(text, frontmatterInfo.contentStart, file);
 	}
 
-	findMentionsInText(text: string, startIndex: number, file: TFile): Mention[] {
-		const result: Mention[] = [];
+	findMentionsInText(text: string, startIndex: number, file: TFile): Mention<TFile>[] {
+		const result: Mention<TFile>[] = [];
 		const parser = new Parser(text, startIndex);
 		let inLink = false;
 
@@ -207,8 +210,8 @@ export class MentionFinder {
 		return result;
 	}
 
-	async linkMention(mention: Mention, target: TFile): Promise<boolean> {
-		const linkText = this.plugin.generateLink(target, mention.file.path, mention.text);
+	async linkMention(mention: Mention<TFile>, target: TFile): Promise<boolean> {
+		const linkText = this.plugin.app.fileManager.generateMarkdownLink(target, mention.file.path, '', mention.text);
 		return await this.plugin.safeReplaceAtIndex(mention.file, mention.index, mention.text, linkText);
 	}
 }
