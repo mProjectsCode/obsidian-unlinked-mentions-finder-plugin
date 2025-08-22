@@ -1,6 +1,6 @@
 {
 	"name": "unlinked-mentions-finder",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "Find unlinked mentions across an entire vault.",
 	"main": "main.js",
 	"scripts": {
