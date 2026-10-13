@@ -1,8 +1,8 @@
-import type { App } from 'obsidian';
-import { PluginSettingTab, Setting } from 'obsidian';
+import type { App, SettingDefinitionItem } from 'obsidian';
+import { PluginSettingTab } from 'obsidian';
 import type UnlinkedMentionsFinderPlugin from 'src/main';
 
-export class SampleSettingTab extends PluginSettingTab {
+export class UnlinkedMentionsFinderSettingTab extends PluginSettingTab {
 	plugin: UnlinkedMentionsFinderPlugin;
 
 	constructor(app: App, plugin: UnlinkedMentionsFinderPlugin) {
@@ -11,27 +11,18 @@ export class SampleSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
-	display(): void {
-		this.containerEl.empty();
-
-		new Setting(this.containerEl)
-			.setName('Link to self')
-			.setDesc('Allows a note to link to itself.')
-			.addToggle(toggle => {
-				toggle.setValue(this.plugin.settings.linkToSelf).onChange(value => {
-					this.plugin.settings.linkToSelf = value;
-					void this.plugin.saveSettings();
-				});
-			});
-
-		new Setting(this.containerEl)
-			.setName('Only find unlinked mentions of markdown files')
-			.setDesc(`Only find unlinked mentions of markdown files and don't find unlinked mentions of other file types such as PDFs.`)
-			.addToggle(toggle => {
-				toggle.setValue(this.plugin.settings.onlyIndexMarkdownFiles).onChange(value => {
-					this.plugin.settings.onlyIndexMarkdownFiles = value;
-					void this.plugin.saveSettings();
-				});
-			});
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		return [
+			{
+				name: 'Link to self',
+				desc: 'Allows a note to link to itself.',
+				control: { type: 'toggle', key: 'linkToSelf' },
+			},
+			{
+				name: 'Only find unlinked mentions of markdown files',
+				desc: `Only find unlinked mentions of markdown files and don't find unlinked mentions of other file types such as PDFs.`,
+				control: { type: 'toggle', key: 'onlyIndexMarkdownFiles' },
+			},
+		];
 	}
 }

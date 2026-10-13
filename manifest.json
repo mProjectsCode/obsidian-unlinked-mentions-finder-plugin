@@ -2,7 +2,7 @@
 	"id": "unlinked-mentions-finder",
 	"name": "Unlinked Mentions Finder",
 	"version": "0.0.7",
-	"minAppVersion": "1.6.0",
+	"minAppVersion": "1.13.0",
 	"description": "Find unlinked mentions across an entire vault.",
 	"author": "Moritz Jung",
 	"authorUrl": "https://www.moritzjung.dev/",

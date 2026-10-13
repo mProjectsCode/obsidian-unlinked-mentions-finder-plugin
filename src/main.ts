@@ -5,7 +5,7 @@ import { HeadingMentionFinder } from 'src/HeadingMentionFinder';
 import { MentionFinder } from 'src/MentionFinder';
 import type { MyPluginSettings } from 'src/settings/Settings';
 import { DEFAULT_SETTINGS } from 'src/settings/Settings';
-import { SampleSettingTab } from 'src/settings/SettingTab';
+import { UnlinkedMentionsFinderSettingTab } from 'src/settings/SettingTab';
 import { UnlinkedMentionsFinderView } from 'src/ui/UnlinkedMentionsFinderView';
 
 export const UNLINKED_MENTIONS_FINDER_VIEW_TYPE = 'unlinked-mentions-finder-view';
@@ -18,7 +18,7 @@ export default class UnlinkedMentionsFinderPlugin extends Plugin {
 	async onload(): Promise<void> {
 		await this.loadSettings();
 
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new UnlinkedMentionsFinderSettingTab(this.app, this));
 
 		this.registerView(UNLINKED_MENTIONS_FINDER_VIEW_TYPE, (leaf: WorkspaceLeaf) => {
 			const mentionFinder = new MentionFinder(this);
@@ -51,10 +51,6 @@ export default class UnlinkedMentionsFinderPlugin extends Plugin {
 
 	async loadSettings(): Promise<void> {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData()) as MyPluginSettings;
-	}
-
-	async saveSettings(): Promise<void> {
-		await this.saveData(this.settings);
 	}
 
 	async activateView(viewType: string): Promise<void> {
