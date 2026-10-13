@@ -1,6 +1,5 @@
 {
 	"compilerOptions": {
-		"baseUrl": ".",
 		"module": "ESNext",
 		"target": "ES6",
 		"allowJs": true,
@@ -8,14 +7,20 @@
 		"strict": true,
 		"strictNullChecks": true,
 		"noImplicitReturns": true,
-		"moduleResolution": "node",
+		"moduleResolution": "bundler",
 		"importHelpers": true,
 		"isolatedModules": true,
 		"lib": ["DOM", "ESNext"],
 		"types": ["svelte"],
 		"allowSyntheticDefaultImports": true,
 		"verbatimModuleSyntax": true,
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"paths": {
+			"packages/*": ["./packages/*"],
+			"src/*": ["./src/*"],
+			"build/*": ["./automation/build/*"],
+			"utils/*": ["./automation/utils/*"]
+		}
 	},
 	"include": ["src/**/*.ts", "tests/**/*.ts", "src/**/*.svelte"]
 }

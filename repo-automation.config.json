@@ -1,0 +1,6 @@
+{
+	"devBranch": "master",
+	"releaseBranch": "release",
+	"github": "https://github.com/mProjectsCode/obsidian-unlinked-mentions-finder-plugin",
+	"preconditions": ["bun run verify"]
+}

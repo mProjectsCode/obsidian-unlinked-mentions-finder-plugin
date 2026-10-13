@@ -1,88 +1,51 @@
-name: Build Obsidian Plugin
-
-# adapted from https://github.com/argenos/nldates-obsidian/blob/master/.github/workflows/release.yml
-
+name: Create plugin release
 on:
     push:
-        # Sequence of patterns matched against refs/tags
-        tags:
-            - '*' # Push events to matching any tag format, i.e. 1.0, 20.15.10
-
-env:
-    PLUGIN_NAME: lemons-plugin-template # Change this to the name of your plugin-id folder
-
+        tags: ['*']
+permissions:
+    contents: read
 jobs:
-    build:
+    release:
         runs-on: ubuntu-latest
-
+        permissions:
+            contents: write
+            id-token: write
+            attestations: write
         steps:
-            - uses: actions/checkout@v3
-            - uses: oven-sh/setup-bun@v1
+            - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
               with:
-                  bun-version: latest
-            - name: Build
-              id: build
-              run: |
-                  bun install
-                  bun run build
-                  mkdir ${{ env.PLUGIN_NAME }}
-                  cp main.js manifest.json styles.css ${{ env.PLUGIN_NAME }}
-                  zip -r ${{ env.PLUGIN_NAME }}.zip ${{ env.PLUGIN_NAME }}
-                  ls
-                  echo "tag_name=$(git tag --sort version:refname | tail -n 1)" >> $GITHUB_OUTPUT
-
-            - name: Create Release
-              id: create_release
-              uses: actions/create-release@v1
+                  persist-credentials: false
+            - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+              with:
+                  node-version: '25.8.0'
+            - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+              with:
+                  bun-version: '1.4.0'
+            - run: bun install --frozen-lockfile
+            - name: Validate tagged version and prepare release manifest
               env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  VERSION: ${{ github.ref }}
+                  RELEASE_TAG: ${{ github.ref_name }}
+              run: bun x --no-install lemons-automation release:manifest
+            - name: Capture review findings for this release
+              continue-on-error: true
+              run: bun run lint:review --format json --output-file review.json
+            - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+              if: ${{ !cancelled() && hashFiles('review.json') != '' }}
               with:
-                  tag_name: ${{ github.ref }}
-                  release_name: ${{ github.ref }}
-                  draft: false
-                  prerelease: false
-
-            - name: Upload zip file
-              id: upload-zip
-              uses: actions/upload-release-asset@v1
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  name: release-review-findings
+                  path: review.json
+                  if-no-files-found: error
+            - run: bun run verify
+            - run: bun run package
+            - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
               with:
-                  upload_url: ${{ steps.create_release.outputs.upload_url }}
-                  asset_path: ./${{ env.PLUGIN_NAME }}.zip
-                  asset_name: ${{ env.PLUGIN_NAME }}-${{ steps.build.outputs.tag_name }}.zip
-                  asset_content_type: application/zip
-
-            - name: Upload main.js
-              id: upload-main
-              uses: actions/upload-release-asset@v1
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  subject-path: |
+                      dist/*
+                      artifacts/*.zip
+            - uses: softprops/action-gh-release@5113cdc90fd4d541c801c55356214017bf5ae34b # v3
               with:
-                  upload_url: ${{ steps.create_release.outputs.upload_url }}
-                  asset_path: ./main.js
-                  asset_name: main.js
-                  asset_content_type: text/javascript
-
-            - name: Upload manifest.json
-              id: upload-manifest
-              uses: actions/upload-release-asset@v1
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              with:
-                  upload_url: ${{ steps.create_release.outputs.upload_url }}
-                  asset_path: ./manifest.json
-                  asset_name: manifest.json
-                  asset_content_type: application/json
-
-            - name: Upload styles.css
-              id: upload-css
-              uses: actions/upload-release-asset@v1
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              with:
-                  upload_url: ${{ steps.create_release.outputs.upload_url }}
-                  asset_path: ./styles.css
-                  asset_name: styles.css
-                  asset_content_type: text/css
+                  prerelease: ${{ contains(github.ref_name, 'canary') }}
+                  fail_on_unmatched_files: true
+                  files: |
+                      dist/*
+                      artifacts/*.zip
