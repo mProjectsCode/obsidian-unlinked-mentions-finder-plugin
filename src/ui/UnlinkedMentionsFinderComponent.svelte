@@ -1,7 +1,7 @@
 <script lang="ts" generics="T">
 	import { TFile } from 'obsidian';
-	import LinkComponent from './LinkComponent.svelte';
 	import type { Mention } from '../MentionFinder';
+	import LinkComponent from './LinkComponent.svelte';
 	import MentionHighlight from './MentionHighlight.svelte';
 	import { UnlinkedMentionsFinderView } from './UnlinkedMentionsFinderView';
 

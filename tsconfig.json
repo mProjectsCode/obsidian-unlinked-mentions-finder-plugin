@@ -17,9 +17,7 @@
 		"skipLibCheck": true,
 		"paths": {
 			"packages/*": ["./packages/*"],
-			"src/*": ["./src/*"],
-			"build/*": ["./automation/build/*"],
-			"utils/*": ["./automation/utils/*"]
+			"src/*": ["./src/*"]
 		}
 	},
 	"include": ["src/**/*.ts", "tests/**/*.ts", "src/**/*.svelte"]
