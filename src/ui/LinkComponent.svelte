@@ -12,7 +12,7 @@
 	let href = $derived(file.path);
 
 	function openFile() {
-		app.workspace.openLinkText(href, '', true);
+		void app.workspace.openLinkText(href, '', true).catch(console.error);
 	}
 </script>
 

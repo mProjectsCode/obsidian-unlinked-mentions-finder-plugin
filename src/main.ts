@@ -3,7 +3,7 @@ import type { TFile, WorkspaceLeaf } from 'obsidian';
 import { Notice, Plugin } from 'obsidian';
 import { HeadingMentionFinder } from 'src/HeadingMentionFinder';
 import { MentionFinder } from 'src/MentionFinder';
-import type { MyPluginSettings } from 'src/settings/Settings';
+import type { UnlinkedMentionsFinderSettings } from 'src/settings/Settings';
 import { DEFAULT_SETTINGS } from 'src/settings/Settings';
 import { UnlinkedMentionsFinderSettingTab } from 'src/settings/SettingTab';
 import { UnlinkedMentionsFinderView } from 'src/ui/UnlinkedMentionsFinderView';
@@ -12,8 +12,8 @@ export const UNLINKED_MENTIONS_FINDER_VIEW_TYPE = 'unlinked-mentions-finder-view
 export const UNLINKED_HEADING_MENTIONS_FINDER_VIEW_TYPE = 'unlinked-heading-mentions-finder-view';
 
 export default class UnlinkedMentionsFinderPlugin extends Plugin {
-	// @ts-ignore defined in on load;
-	settings: MyPluginSettings;
+	// @ts-expect-error Initialized by loadSettings during onload; retain the emitted own property.
+	settings: UnlinkedMentionsFinderSettings;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
@@ -50,7 +50,7 @@ export default class UnlinkedMentionsFinderPlugin extends Plugin {
 	onunload(): void {}
 
 	async loadSettings(): Promise<void> {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData()) as MyPluginSettings;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData()) as UnlinkedMentionsFinderSettings;
 	}
 
 	async activateView(viewType: string): Promise<void> {

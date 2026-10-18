@@ -3,7 +3,8 @@
 	import type { Mention } from '../MentionFinder';
 	import LinkComponent from './LinkComponent.svelte';
 	import MentionHighlight from './MentionHighlight.svelte';
-	import { UnlinkedMentionsFinderView } from './UnlinkedMentionsFinderView';
+	import type { UnlinkedMentionsFinderView } from './UnlinkedMentionsFinderView';
+	import './UnlinkedMentionsFinderView';
 
 	const {
 		view,
@@ -64,12 +65,12 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each mentions.slice(0, 100) as mention}
+			{#each mentions.slice(0, 100) as mention (mention)}
 				<tr>
 					<td><MentionHighlight mention={mention}></MentionHighlight></td>
 					<td><LinkComponent file={mention.file} app={view.plugin.app}></LinkComponent></td>
 					<td>
-						{#each mention.mentions as m}
+						{#each mention.mentions as m, i (i)}
 							<!-- <LinkComponent file={mention} app={view.plugin.app}></LinkComponent> -->
 							<button onclick={() => void linkResult(mention, m)} disabled={locked}>{m instanceof TFile ? m.name : String(m)}</button>
 						{/each}
