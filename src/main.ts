@@ -40,7 +40,7 @@ export default class UnlinkedMentionsFinderPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'open-unlinked-heading-mentions-finder',
-			name: 'Open Unlinked Heading Mentions Finder',
+			name: 'Open unlinked heading mentions finder',
 			callback: async () => {
 				await this.activateView(UNLINKED_HEADING_MENTIONS_FINDER_VIEW_TYPE);
 			},
