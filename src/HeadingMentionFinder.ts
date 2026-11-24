@@ -3,6 +3,7 @@ import { getFrontMatterInfo } from 'obsidian';
 import type { IMentionFinder } from 'src/IMentionFinder';
 import type UnlinkedMentionsFinderPlugin from 'src/main';
 import type { Mention } from 'src/MentionFinder';
+import { shouldSkipMentionsInFile } from 'src/MentionFinder';
 import { Parser } from 'src/utils/Parser';
 
 const HEADING_REGEXP = /^[\W\D]?([a-zA-Z]\d+)([a-zA-Z]?)\b/;
@@ -78,6 +79,10 @@ export class HeadingMentionFinder implements IMentionFinder<string> {
 	}
 
 	async findMentionsInFile(file: TFile): Promise<Mention<string>[]> {
+		if (shouldSkipMentionsInFile(this.plugin.app.metadataCache, file)) {
+			return [];
+		}
+
 		const index = this.buildIndex(file);
 
 		let text = await this.plugin.app.vault.cachedRead(file);

@@ -1,4 +1,4 @@
-import type { TFile } from 'obsidian';
+import type { MetadataCache, TFile } from 'obsidian';
 import { getFrontMatterInfo, parseFrontMatterAliases } from 'obsidian';
 import type { IMentionFinder } from 'src/IMentionFinder';
 import type UnlinkedMentionsFinderPlugin from 'src/main';
@@ -12,6 +12,10 @@ const IGNORE_PROPERTY = 'ulmf_ignore';
 const CASE_SENSITIVE_PROPERTY = 'ulmf_case_sensitive';
 const IGNORE_ALIASES_PROPERTY = 'ulmf_ignore_aliases';
 const IGNORE_TITLE_PROPERTY = 'ulmf_ignore_title';
+
+export function shouldSkipMentionsInFile(metadataCache: MetadataCache, file: TFile): boolean {
+	return metadataCache.getFileCache(file)?.frontmatter?.[SKIP_PROPERTY] === true;
+}
 
 export interface Mention<T> {
 	text: string;
@@ -105,21 +109,17 @@ export class MentionFinder implements IMentionFinder<TFile> {
 	}
 
 	async findMentionsInVault(): Promise<Mention<TFile>[]> {
-		const intermediate = await Promise.all(
-			this.plugin.app.vault
-				.getMarkdownFiles()
-				.filter(file => {
-					return this.plugin.app.metadataCache.getFileCache(file)?.frontmatter?.[SKIP_PROPERTY] !== true;
-				})
-				.map(async file => {
-					return await this.findMentionsInFile(file);
-				}),
-		);
+		const files = this.plugin.app.vault.getMarkdownFiles();
+		const intermediate = await Promise.all(files.map(file => this.findMentionsInFile(file)));
 
 		return intermediate.flat();
 	}
 
 	async findMentionsInFile(file: TFile): Promise<Mention<TFile>[]> {
+		if (shouldSkipMentionsInFile(this.plugin.app.metadataCache, file)) {
+			return [];
+		}
+
 		let text = await this.plugin.app.vault.cachedRead(file);
 		const frontmatterInfo = getFrontMatterInfo(text);
 		text = text.slice(frontmatterInfo.contentStart);
