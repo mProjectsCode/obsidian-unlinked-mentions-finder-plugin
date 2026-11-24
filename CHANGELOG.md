@@ -12,3 +12,5 @@ Misc
 - Fixed Obsidian review findings
 
 # 0.0.9
+
+# 0.0.10
